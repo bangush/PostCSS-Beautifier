@@ -1,7 +1,6 @@
 ﻿using Microsoft.Build.Framework;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
@@ -21,56 +20,28 @@ namespace PostCSSBeautifier.BuildTasks
 		public static string NodeUrl = "https://nodejs.org/dist/v" + NodeVersion + "/node-v" + NodeVersion + "-win-x64.zip";
 		public static string NodeFolder = "node-v" + NodeVersion + "-win-x64";
 
-		private List<string> toRemove = new List<string>()
+		static DateTime GetSourceVersion([CallerFilePath] string path = null)
 		{
-			"*.md",
-			"*.markdown",
-			"*.html",
-			"*.txt",
-			"LICENSE",
-			"README",
-			"CHANGELOG",
-			"CNAME",
-			"*.old",
-			"*.patch",
-			"*.ico",
-			"Makefile.*",
-			"Rakefile",
-			"*.yml",
-			"generate-*",
-			"media",
-			"images",
-			"man",
-			"benchmark",
-			"docs",
-			"scripts",
-			"test",
-			"tst",
-			"tests",
-			"testing",
-			"examples",
-			"*.tscache",
-			"example",
-		};
-
-		static DateTime GetSourceVersion([CallerFilePath] string path = null) { return IO.File.GetLastWriteTimeUtc(path); }
+			return IO.File.GetLastWriteTimeUtc(path);
+		}
 
 
 		// Stores the timestamp of the last successful build.  This file will be deleted
 		// at the beginning of each non-cached build, so there is no risk of caching the
 		// results of a failed build.
 		const string VersionStampFileName = @"resources\nodejs\tools\node_modules\successful-version-timestamp.txt";
+
 		public override bool Execute()
 		{
 			DateTime existingVersion;
 			if (IO.File.Exists(VersionStampFileName)
-			 && DateTime.TryParse(
-				 IO.File.ReadAllText(VersionStampFileName),
-				 CultureInfo.InvariantCulture,
-				 DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AdjustToUniversal,
-				 out existingVersion)
-			 && existingVersion > DateTime.UtcNow - TimeSpan.FromDays(14)
-			 && existingVersion > GetSourceVersion())
+			    && DateTime.TryParse(
+				    IO.File.ReadAllText(VersionStampFileName),
+				    CultureInfo.InvariantCulture,
+				    DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AdjustToUniversal,
+				    out existingVersion)
+			    && existingVersion > DateTime.UtcNow - TimeSpan.FromDays(14)
+			    && existingVersion > GetSourceVersion())
 			{
 				Log.LogMessage(MessageImportance.High, "Reusing existing installed Node modules from " + existingVersion);
 				return true;
@@ -78,32 +49,26 @@ namespace PostCSSBeautifier.BuildTasks
 			if (IO.Directory.Exists(@"resources\nodejs\tools\node_modules"))
 				ClearPath(@"resources\nodejs\tools\node_modules");
 
-			//IO.Directory.CreateDirectory(@"resources\nodejs\tools");
-			// Force npm to install modules to the subdirectory
-			// https://npmjs.org/doc/files/npm-folders.html#More-Information
-
-			// We install our modules in this subdirectory so that
-			// we can clean up their dependencies without catching
-			// npm's modules, which we don't want.
-			//IO.File.WriteAllText(@"resources\nodejs\tools\package.json", "{}");
-
-			// Since this is a synchronous job, I have
-			// no choice but to synchronously wait for
-			// the tasks to finish. However, the async
-			// still saves threads.
-
 			Task.WaitAll(
 				DownloadNodeZipAsync()
 			);
 
+			const string configPath = @"resources\postcss.config.js";
+			const string copyToPath = @"resources\nodejs\postcss.config.js";
+			if (!IO.File.Exists(copyToPath))
+			{
+				IO.File.Copy(configPath, copyToPath);
+			}
+
 			var moduleResults = Task.WhenAll(
-				//   InstallModuleAsync("csscomb", "csscomb"),
-				// InstallModuleAsync("postcss", "postcss"),
-				 InstallModuleAsync("postcss-cli", "postcss-cli"),
-				 InstallModuleAsync("postcss-scss", "postcss-scss"),
-				 InstallModuleAsync("postcss-sorting", "postcss-sorting")
-				//InstallModuleCommand("postcss-cli")
-			).Result.Where(r => r != ModuleInstallResult.AlreadyPresent);
+					InstallModuleAsync("postcss-cli", "postcss-cli"),
+					InstallModuleAsync("postcss-scss", "postcss-scss"),
+					InstallModuleAsync("postcss-sorting", "postcss-sorting"),
+					InstallModuleAsync("stylelint", "stylelint"),
+					InstallModuleAsync("stylelint-config-standard", "stylelint-config-standard"),
+					InstallModuleAsync("stylefmt", "stylefmt")
+				)
+				.Result.Where(r => r != ModuleInstallResult.AlreadyPresent);
 
 			if (moduleResults.Contains(ModuleInstallResult.Error))
 				return false;
@@ -116,11 +81,7 @@ namespace PostCSSBeautifier.BuildTasks
 			if (!DedupeAsync().Result)
 				return false;
 
-			// Delete test directories before flattening (since some tests have node_modules folders)
-			//CleanPath(@"resources\nodejs\node_modules");
 			FlattenNodeModules(@"resources\nodejs");
-
-			//IO.File.WriteAllText(VersionStampFileName, DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
 
 			return true;
 		}
@@ -178,18 +139,23 @@ namespace PostCSSBeautifier.BuildTasks
 		{
 			HttpWebResponse response;
 			return e.Status == WebExceptionStatus.ProtocolError
-				&& (response = e.Response as HttpWebResponse) != null
-				&& response.StatusCode == status;
+			       && (response = e.Response as HttpWebResponse) != null
+			       && response.StatusCode == status;
 		}
 
 		static WebClient CreateWebClientWithProxyAuthSetup(IWebProxy proxy = null, ICredentials credentials = null)
 		{
-			var wc = new WebClient { Proxy = proxy ?? WebRequest.GetSystemWebProxy() };
+			var wc = new WebClient {Proxy = proxy ?? WebRequest.GetSystemWebProxy()};
 			wc.Proxy.Credentials = credentials ?? CredentialCache.DefaultCredentials;
 			return wc;
 		}
 
-		enum ModuleInstallResult { AlreadyPresent, Installed, Error }
+		enum ModuleInstallResult
+		{
+			AlreadyPresent,
+			Installed,
+			Error
+		}
 
 		async Task<ModuleInstallResult> InstallModuleAsync(string cmdName, string moduleName)
 		{
@@ -237,9 +203,9 @@ namespace PostCSSBeautifier.BuildTasks
 			var baseDir = new DirectoryInfo(baseNodeModuleDir);
 
 			var modules = from dir in new DirectoryInfo(baseNodeModuleDir).GetDirectories("*", IO.SearchOption.AllDirectories)
-						  where dir.Name.Equals("node_modules", StringComparison.OrdinalIgnoreCase)
-						  orderby dir.FullName.Count(c => c == IO.Path.DirectorySeparatorChar) descending // Get deepest first
-						  select dir;
+				where dir.Name.Equals("node_modules", StringComparison.OrdinalIgnoreCase)
+				orderby dir.FullName.Count(c => c == IO.Path.DirectorySeparatorChar) descending // Get deepest first
+				select dir;
 
 			foreach (var nodeModule in modules)
 			{
@@ -279,7 +245,8 @@ namespace PostCSSBeautifier.BuildTasks
 					// Try to move the module to the node_modules folder in the
 					// base directory, then to that same folder in every parent
 					// module up to this module's immediate parent.
-					foreach (var part in module.Parent.Parent.FullName.Substring(intermediatePath.Length).Split(new[] { @"\node_modules\" }, StringSplitOptions.None))
+					foreach (var part in module.Parent.Parent.FullName.Substring(intermediatePath.Length)
+						.Split(new[] {@"\node_modules\"}, StringSplitOptions.None))
 					{
 						if (!string.IsNullOrEmpty(part))
 							intermediatePath += @"\node_modules\" + part;
@@ -319,7 +286,8 @@ namespace PostCSSBeautifier.BuildTasks
 		}
 
 		/// <summary>Invokes a command-line process asynchronously.</summary>
-		static Task<int> ExecAsync(string filename, string args, string workingDirectory = null, IO.TextWriter stdout = null, IO.TextWriter stderr = null)
+		static Task<int> ExecAsync(string filename, string args, string workingDirectory = null, IO.TextWriter stdout = null,
+			IO.TextWriter stderr = null)
 		{
 			stdout = stdout ?? IO.TextWriter.Null;
 			stderr = stderr ?? IO.TextWriter.Null;

@@ -19,14 +19,14 @@ namespace PostCSSBeautifier.Compiler
 				using (var errorTw = new StringWriter(error))
 				using (var successTw = new StringWriter(success))
 				{
-					await ProcessCreator.RunCommand(
+					var exitCode = await ProcessCreator.RunCommand(
 						"postcss " + arguments,
 						nodeLocation,
 						successTw,
 						errorTw,
 						5000);
 
-					if (!string.IsNullOrWhiteSpace(error.ToString()))
+					if (!string.IsNullOrWhiteSpace(error.ToString()) && exitCode != 0)
 					{
 						MessageBox.Show(error.ToString());
 					}

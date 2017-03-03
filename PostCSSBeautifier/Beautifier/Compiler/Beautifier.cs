@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace PostCSSBeautifier.Compiler
 {
-	class Beautifier
+	internal class Beautifier
 	{
-		public static async Task<string> Comb(string tempFilePath)
+		public static async Task<string> Process(string tempFilePath)
 		{
 			var config = BeautifierTagger.CombConfigPath == BeautifierTagger.DefaultCombConfigPath
 				? @"..\..\" + BeautifierTagger.CombConfigPath

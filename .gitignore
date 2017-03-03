@@ -10,3 +10,5 @@
 /PostCSSBeautifier/BuildTasks/obj
 /PostCSSBeautifier/BuildTasks/bin
 /PostCSSBeautifier/packages
+/PostCSSBeautifier/Beautifier/bin/Debug
+/PostCSSBeautifier/Beautifier/obj/Debug

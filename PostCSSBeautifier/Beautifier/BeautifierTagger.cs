@@ -13,7 +13,6 @@ using PostCSSBeautifier.Properties;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
@@ -51,34 +50,6 @@ namespace PostCSSBeautifier
 			var settings = new Settings();
 			var settingsConfigPath = settings.BeautifierJSONConfigPath;
 			BeautifierTagger.RefreshConfig(settingsConfigPath);
-		}
-
-		public static void RefreshConfig(string path)
-		{
-			var pathIsSet = path != @"C:\some_path\your_file.json" && path != "";
-
-			var config = "";
-			var hadError = false;
-			if (pathIsSet)
-			{
-				try
-				{
-					TextReader tr = new StreamReader(path);
-					config = tr.ReadToEnd();
-				}
-				catch (Exception)
-				{
-					hadError = true;
-
-					MessageBox.Show(string.Format("VS CSS Comb attempted to load a configuration file at '{0}', " +
-												  "but an error occured. Please ensure that a .json file exists at " +
-												  "that path.\r\n\r\nWe will use the default configuration until you " +
-												  "fix the path. Visit http://csscomb.com/config to learn more about " +
-												  "how to create CSSComb configuration.", path), "VS CSS Comb - Error");
-				}
-			}
-
-			BeautifierTagger.CombConfigPath = pathIsSet ? path : DefaultCombConfigPath;
 		}
 
 		private async void ViewLayoutChanged(object sender, TextViewLayoutChangedEventArgs e)
@@ -120,7 +91,7 @@ namespace PostCSSBeautifier
 					FindMatchingOpeningBrace(endBracePosition, out fullDeclarationSpan);
 
 					var unformattedCssTempFilePath = Compiler.Beautifier.MakeTempFile(fullDeclarationSpan.GetText(), this.ContentType);
-					var result = await Compiler.Beautifier.Comb(unformattedCssTempFilePath).WithTimeout(TimeSpan.FromSeconds(5));
+					var result = await Compiler.Beautifier.Process(unformattedCssTempFilePath).WithTimeout(TimeSpan.FromSeconds(5));
 
 					this.IsTiming = true;
 					Timer = new Timer
@@ -280,21 +251,32 @@ namespace PostCSSBeautifier
 			return !string.IsNullOrEmpty(this.CurrentComment);
 		}
 
-		private int AddTabs(string ogText, string fixedText)
+		public static void RefreshConfig(string path)
 		{
-			ogText = ogText.Replace("\r", "");
-			var ogLines = ogText.Split(new[] { "\n" }, StringSplitOptions.None);
-			var firstGoodLine = ogLines.FirstOrDefault(a => !string.IsNullOrEmpty(a.Trim()));
-			if (firstGoodLine != null)
-			{
-				var startingWhitespaceLength = firstGoodLine.Length - firstGoodLine.TrimStart().Length;
-				var whitespace = firstGoodLine.Substring(0, startingWhitespaceLength);
-				var tabs = whitespace.Count(a => a == '\t');
+			var pathIsSet = path != @"C:\some_path\your_file.json" && path != "";
 
-				return tabs;
+			var config = "";
+			var hadError = false;
+			if (pathIsSet)
+			{
+				try
+				{
+					TextReader tr = new StreamReader(path);
+					config = tr.ReadToEnd();
+				}
+				catch (Exception)
+				{
+					hadError = true;
+
+					MessageBox.Show(string.Format("VS CSS Process attempted to load a configuration file at '{0}', " +
+					                              "but an error occured. Please ensure that a .json file exists at " +
+					                              "that path.\r\n\r\nWe will use the default configuration until you " +
+					                              "fix the path. Visit http://csscomb.com/config to learn more about " +
+					                              "how to create CSSComb configuration.", path), "VS CSS Process - Error");
+				}
 			}
 
-			return 0;
+			BeautifierTagger.CombConfigPath = pathIsSet ? path : DefaultCombConfigPath;
 		}
 	}
 }
