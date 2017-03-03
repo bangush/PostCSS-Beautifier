@@ -3,3 +3,10 @@
 ################################################################################
 
 /PostCSSBeautifier/.vs
+/PostCSSBeautifier/Beautifier/resources/nodejs
+/PostCSSBeautifier/Beautifier/resources/server
+/PostCSSBeautifier/Beautifier/Beautifier.csproj.user
+/PostCSSBeautifier/Beautifier/Key.snk
+/PostCSSBeautifier/BuildTasks/obj
+/PostCSSBeautifier/BuildTasks/bin
+/PostCSSBeautifier/packages
