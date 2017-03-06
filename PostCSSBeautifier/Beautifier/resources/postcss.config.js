@@ -1,7 +1,26 @@
 ﻿var scss = require("postcss-scss");
 
 module.exports = {
+	parser: scss,
 	plugins: [
+		require("stylefmt")({
+			"extends": "stylelint-config-standard",
+			"rules": {
+				"at-rule-empty-line-before": "always",
+				"block-closing-brace-newline-after": "always",
+				"block-closing-brace-newline-before": "always",
+				"block-opening-brace-newline-after": "always",
+				"block-opening-brace-newline-before": "always",
+				"declaration-colon-space-after": "always",
+				"declaration-colon-space-before": "never",
+				"indentation": "tabs",
+				"length-zero-no-unit": true,
+				"selector-combinator-space-after": "always",
+				"selector-combinator-space-before": "always",
+				"selector-list-comma-newline-after": "always",
+				"selector-list-comma-newline-before": "never"
+			}
+		}),
 		require('postcss-sorting')({
 			"order": [
 				"custom-properties",
@@ -224,14 +243,6 @@ module.exports = {
 				}
 			],
 			"unspecified-properties-position": "bottom"
-		}),
-		require("stylefmt")({
-			"syntax": scss
-		}),
-		require("stylelint")({
-			"extends": "stylelint-config-standard",
-			"rules": {
-			}
 		})
 	]
 }

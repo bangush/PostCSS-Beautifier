@@ -59,10 +59,13 @@
     <Compile Include="Compiler\Result\CompilerResult.cs" />
     <Compile Include="BeautifierTaggerProvider.cs" />
     <Compile Include="BeautifierTagger.cs" />
+    <Compile Include="FormatMenuCommand.cs" />
+    <Compile Include="FormatMenuCommandPackage.cs" />
     <Compile Include="Helpers\AsyncHelper.cs" />
     <Compile Include="Helpers\AsyncLock.cs" />
     <Compile Include="Helpers\FileHelpers.cs" />
     <Compile Include="Helpers\FileTransientErrorDetectionStrategy.cs" />
+    <Compile Include="Helpers\NodePaths.cs" />
     <Compile Include="Helpers\PolicyFactory.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -71,9 +74,15 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\OutputWriter.cs" />
     <Compile Include="ToolsOptionsPackage.cs" />
   </ItemGroup>
   <ItemGroup>
+    <VSCTCompile Include="FormatMenuCommandPackage.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
+    <Content Include="Resources\FormatMenuCommand.png" />
+    <Content Include="Resources\FormatMenuCommandPackage.ico" />
     <Content Include="Resources\postcss.config.js" />
     <Content Include="Resources\ToolsOptionsCommand.png" />
     <Content Include="Resources\ToolsOptionsCommandPackage.ico" />
@@ -313,6 +322,9 @@
     <!-- Include newly downloaded files now.. -->
     <ItemGroup>
       <Content Include="Resources\nodejs\node.exe">
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+      <Content Include="Resources\postcss.config.js">
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
       <!-- Exclude LESS & SASS because they have too many extra files; use a whitelist instead -->

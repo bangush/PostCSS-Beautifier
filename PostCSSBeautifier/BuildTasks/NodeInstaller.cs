@@ -29,7 +29,7 @@ namespace PostCSSBeautifier.BuildTasks
 		// Stores the timestamp of the last successful build.  This file will be deleted
 		// at the beginning of each non-cached build, so there is no risk of caching the
 		// results of a failed build.
-		const string VersionStampFileName = @"resources\nodejs\tools\node_modules\successful-version-timestamp.txt";
+		const string VersionStampFileName = @"resources\nodejs\node_modules\successful-version-timestamp.txt";
 
 		public override bool Execute()
 		{
@@ -46,8 +46,8 @@ namespace PostCSSBeautifier.BuildTasks
 				Log.LogMessage(MessageImportance.High, "Reusing existing installed Node modules from " + existingVersion);
 				return true;
 			}
-			if (IO.Directory.Exists(@"resources\nodejs\tools\node_modules"))
-				ClearPath(@"resources\nodejs\tools\node_modules");
+			if (IO.Directory.Exists(@"resources\nodejs\node_modules"))
+				ClearPath(@"resources\nodejs\node_modules");
 
 			Task.WaitAll(
 				DownloadNodeZipAsync()
@@ -55,8 +55,10 @@ namespace PostCSSBeautifier.BuildTasks
 
 			const string configPath = @"resources\postcss.config.js";
 			const string copyToPath = @"resources\nodejs\postcss.config.js";
-			if (!IO.File.Exists(copyToPath))
+
+			if (IO.File.Exists(copyToPath))
 			{
+				IO.File.Delete(copyToPath);
 				IO.File.Copy(configPath, copyToPath);
 			}
 
@@ -82,6 +84,8 @@ namespace PostCSSBeautifier.BuildTasks
 				return false;
 
 			FlattenNodeModules(@"resources\nodejs");
+
+			IO.File.WriteAllText(VersionStampFileName, DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
 
 			return true;
 		}

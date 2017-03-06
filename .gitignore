@@ -12,3 +12,5 @@
 /PostCSSBeautifier/packages
 /PostCSSBeautifier/Beautifier/bin/Debug
 /PostCSSBeautifier/Beautifier/obj/Debug
+/PostCSSBeautifier/Beautifier/bin/Release
+/PostCSSBeautifier/Beautifier/obj/Release

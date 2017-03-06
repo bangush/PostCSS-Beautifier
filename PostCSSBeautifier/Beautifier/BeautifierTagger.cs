@@ -22,8 +22,9 @@ namespace PostCSSBeautifier
 	/// <summary>
 	/// Classifier that classifies all text as an instance of the "CSSBraid" classification type.
 	/// </summary>
-	internal class BeautifierTagger : ITagger<TextMarkerTag>
+	public class BeautifierTagger : ITagger<TextMarkerTag>
 	{
+		public static IContentType CurrentContentType { get; set; }
 		private int OldPosition { get; set; }
 		private ITextView View { get; }
 		private ITextBuffer SourceBuffer { get; }
@@ -33,7 +34,7 @@ namespace PostCSSBeautifier
 		private bool IsTiming { get; set; }
 
 		private string CurrentComment { get; set; }
-		public static string DefaultCombConfigPath = @"resources\postcss.config.js";
+		public static string DefaultCombConfigPath = Path.Combine(NodePaths.Resources, @"postcss.config.js");
 		public static string CombConfigPath { get; private set; } = DefaultCombConfigPath;
 
 		public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
@@ -44,8 +45,9 @@ namespace PostCSSBeautifier
 			this.SourceBuffer = sourceBuffer;
 			this.CurrentChar = null;
 			this.ContentType = this.SourceBuffer.ContentType;
+			BeautifierTagger.CurrentContentType = this.ContentType;
 
-			this.View.LayoutChanged += ViewLayoutChanged;
+			//this.View.LayoutChanged += ViewLayoutChanged;
 
 			var settings = new Settings();
 			var settingsConfigPath = settings.BeautifierJSONConfigPath;
@@ -90,21 +92,7 @@ namespace PostCSSBeautifier
 					var endBracePosition = new SnapshotPoint(this.View.TextSnapshot, lastChar.Position + 1);
 					FindMatchingOpeningBrace(endBracePosition, out fullDeclarationSpan);
 
-					var unformattedCssTempFilePath = Compiler.Beautifier.MakeTempFile(fullDeclarationSpan.GetText(), this.ContentType);
-					var result = await Compiler.Beautifier.Process(unformattedCssTempFilePath).WithTimeout(TimeSpan.FromSeconds(5));
-
-					this.IsTiming = true;
-					Timer = new Timer
-					{
-						Interval = 1000,
-						Enabled = true
-					};
-					Timer.Elapsed += OnTimedEvent;
-
-					result = result.Replace(@"\r\n|\n\r|\n|\r", "\r\n").TrimEnd();
-
-					this.SourceBuffer.Replace(fullDeclarationSpan, result);
-					Logger.Log(result);
+					await ProcessSpan(fullDeclarationSpan);
 				}
 
 			}
@@ -113,6 +101,24 @@ namespace PostCSSBeautifier
 				Logger.Log(e);
 			}
 
+		}
+
+		public async Task ProcessSpan(SnapshotSpan span)
+		{
+			var result = await Compiler.Beautifier.ProcessString(span.GetText(), this.ContentType);
+
+			this.IsTiming = true;
+			Timer = new Timer
+			{
+				Interval = 1000,
+				Enabled = true
+			};
+			Timer.Elapsed += OnTimedEvent;
+
+			result = result.Replace(@"\r\n|\n\r|\n|\r", "\r\n").TrimEnd();
+
+			this.SourceBuffer.Replace(span, result);
+			OutputWriter.Write(result);
 		}
 
 		private void OnTimedEvent(object source, ElapsedEventArgs e)
