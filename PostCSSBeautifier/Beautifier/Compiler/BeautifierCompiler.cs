@@ -3,62 +3,29 @@ using Microsoft.Web.Core.ContentTypes;
 using PostCSSBeautifier.Helpers;
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PostCSSBeautifier.Compiler
 {
-	internal class Beautifier
+	internal class BeautifierCompiler
 	{
-		public static async Task<string> ProcessString(string toProcess, IContentType contentType)
+		public static string ProcessString(string toProcess, IContentType contentType)
+		{
+			return AsyncHelper.RunSync(() => ProcessStringAsync(toProcess, contentType));
+		}
+
+		public static async Task<string> ProcessStringAsync(string toProcess, IContentType contentType)
 		{
 			var unformattedCssTempFilePath = MakeTempFile(toProcess, contentType);
-			return await Compiler.Beautifier.Process(unformattedCssTempFilePath).WithTimeout(TimeSpan.FromSeconds(5));
+			return await Process(unformattedCssTempFilePath).WithTimeout(TimeSpan.FromSeconds(5));
 		}
 
 		public static async Task<string> Process(string tempFilePath)
 		{
 			OutputWriter.Write($"Resources: {NodePaths.Resources}");
 
-			var configPath = BeautifierTagger.CombConfigPath == BeautifierTagger.DefaultCombConfigPath
-				? Path.Combine(@"..\..\", BeautifierTagger.CombConfigPath)
-				: BeautifierTagger.CombConfigPath;
-
-			OutputWriter.Write($"Config path is {configPath}");
-
-			var newConfigPath = Path.Combine(NodePaths.Node, "postcss.config.js");
-
-			if (configPath != newConfigPath)
-			{
-				var filesAreDifferent = true;
-				if (File.Exists(newConfigPath))
-				{
-					filesAreDifferent = !FileEquals(configPath, newConfigPath);
-				}
-
-				if (filesAreDifferent)
-				{
-					try
-					{
-						if (File.Exists(newConfigPath))
-						{
-							OutputWriter.Write($"Deleting existing temp config file at {newConfigPath}");
-							File.Delete(newConfigPath);
-						}
-
-						OutputWriter.Write($"Writing config {newConfigPath}");
-						File.Copy(configPath, newConfigPath);
-					}
-					catch (IOException io)
-					{
-						OutputWriter.Write($"An exception occured copying {configPath} to {newConfigPath}: {io}");
-					}
-					catch (Exception e)
-					{
-						OutputWriter.Write(e, true);
-					}
-				}
-			}
-
+			ConfigFileManager.UpdateOrCreateConfig();
 
 			var cmd = $"--no-map -c postcss.config.js -r \"{tempFilePath}\"";
 
@@ -66,6 +33,8 @@ namespace PostCSSBeautifier.Compiler
 			OutputWriter.Write($"Command ouput: {ns}");
 
 			var formattedString = File.ReadAllText(tempFilePath);
+
+			formattedString = Regex.Replace(formattedString, "(?<!\r)\n", "\r\n");
 
 			return formattedString;
 		}

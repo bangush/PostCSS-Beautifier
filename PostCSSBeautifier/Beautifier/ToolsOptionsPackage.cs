@@ -4,10 +4,10 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
-using PostCSSBeautifier.Properties;
+using PostCSSBeautifier.Compiler;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace PostCSSBeautifier
@@ -17,26 +17,20 @@ namespace PostCSSBeautifier
 		public const string guidMyToolsOptionsPkgString = "01030911-e7a9-43de-bee7-e881eb784ac6";
 	}
 
-	[ProvideMenuResource("Menus.ctmenu", 1)]
-	[Guid(ToolsOptionsPackage.PackageGuidString)]
+	[PackageRegistration(UseManagedResourcesOnly = true)]
 	[InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
-	[ProvideOptionPage(typeof(OptionPageGrid), "VS CSS Process", "Config Path", 0, 0, true)]
-	[SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling"), PackageRegistration(UseManagedResourcesOnly = true)]
+	[ProvideAutoLoad("{f1536ef8-92ec-443c-9ed7-fdadf150da82}")]
+	[Guid(ToolsOptionsPackage.PackageGuidString)]
+	[ProvideOptionPage(typeof(OptionPageGrid), "PostCSS Beautifier", "Settings", 0, 0, true)]
 	public sealed class ToolsOptionsPackage : Package
 	{
+
+		private FormatDocumentOnBeforeSave plugin;
+
 		/// <summary>
 		/// ToolsOptionsPackage GUID string.
 		/// </summary>
 		public const string PackageGuidString = "5dc9a1ee-4aae-46a1-bb23-deb7c8498842";
-
-		public string CombConfigPath
-		{
-			get
-			{
-				var page = (OptionPageGrid)GetDialogPage(typeof(OptionPageGrid));
-				return page.CombConfigPath;
-			}
-		}
 
 
 		/// <summary>
@@ -56,8 +50,15 @@ namespace PostCSSBeautifier
 		/// Initialization of the package; this method is called right after the package is sited, so this is the place
 		/// where you can put all the initialization code that rely on services provided by VisualStudio.
 		/// </summary>
-		protected override void Initialize()
+		protected override async void Initialize()
 		{
+			var dte = (DTE) GetService(typeof(DTE));
+
+			var runningDocumentTable = new RunningDocumentTable(this);
+			var documentFormatService = new BeautifierFormatService(dte);
+			plugin = new FormatDocumentOnBeforeSave(dte, runningDocumentTable, documentFormatService);
+			runningDocumentTable.Advise(plugin);
+
 			base.Initialize();
 		}
 
@@ -69,36 +70,45 @@ namespace PostCSSBeautifier
 	[Guid(GuidList.guidMyToolsOptionsPkgString)]
 	public class OptionPageGrid : DialogPage
 	{
-		private Settings Settings { get; }
+		private static readonly Settings Settings = new Settings();
 
-		public OptionPageGrid()
-		{
-			this.Settings = new Settings();
-		}
+		public static string StyleFmtPath { get; set; } =
+			!string.IsNullOrWhiteSpace(Settings.stylefmtJsonPath)
+				? Settings.stylefmtJsonPath
+				: ConfigFileManager.DefaultStyleFmtPath.ToLower();
 
-		[Category("VS CSS Process")]
-		[DisplayName("Config Path")]
-		[Description("Set your own configuration")]
-		public string CombConfigPath
+		public static string PostCssPath { get; set; } =
+			!string.IsNullOrWhiteSpace(Settings.postcssSortingJsonPath)
+				? Settings.postcssSortingJsonPath
+				: ConfigFileManager.DefaultPostCssSortingPath.ToLower();
+
+		[Category("PostCSS Beautifier")]
+		[DisplayName("StyleFmt JSON Path")]
+		[Description("The location for your stylefmt json config file. See https://goo.gl/0Apmas for formatting tips.")]
+		public string StyleFmtJson
 		{
+			get { return StyleFmtPath; }
 			set
 			{
-				this.Settings.BeautifierJSONConfigPath = value;
-				BeautifierTagger.RefreshConfig(value);
+				StyleFmtPath = value;
+				Settings.stylefmtJsonPath = value;
+				Settings.Save();
 			}
-			get { return this.Settings.BeautifierJSONConfigPath; }
 		}
 
-		[Category("VS CSS Process")]
-		[DisplayName("Debug Mode")]
-		[Description("Enable Debug Mode")]
-		public bool DebugMode
+		[Category("PostCSS Beautifier")]
+		[DisplayName("PostCSS Sorting JSON Path")]
+		[Description(
+			"The location for your postcss-sorting json config file. See https://goo.gl/hl3kQK for formatting tips.")]
+		public string PostCssSortingJson
 		{
+			get { return PostCssPath; }
 			set
 			{
-				this.Settings.DebugMode = value;
+				PostCssPath = value;
+				Settings.postcssSortingJsonPath = value;
+				Settings.Save();
 			}
-			get { return this.Settings.DebugMode; }
 		}
 	}
 }

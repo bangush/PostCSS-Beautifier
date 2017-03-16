@@ -1,5 +1,4 @@
-﻿using PostCSSBeautifier.Properties;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -17,14 +16,11 @@ namespace PostCSSBeautifier.Compiler
 			TextWriter errorTextWriter,
 			int? timeout = null)
 		{
-			var settings = new Settings();
-			var debugMode = settings.DebugMode;
-
 			using (var process = new Process()
 			{
 				StartInfo = new ProcessStartInfo("cmd")
 				{
-					CreateNoWindow = !debugMode,
+					CreateNoWindow = true,
 					Arguments = $"/c cd /d {workingDirectory} && {command}",
 					RedirectStandardOutput = true,
 					RedirectStandardError = true,

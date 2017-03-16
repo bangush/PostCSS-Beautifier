@@ -51,23 +51,24 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Compiler\CompilerResultFactory.cs" />
-    <Compile Include="Compiler\Beautifier.cs" />
-    <Compile Include="Compiler\NodeExecutorBase.cs" />
+    <Compile Include="BeautifierFormatService.cs" />
+    <Compile Include="Compiler\BeautifierCompiler.cs" />
     <Compile Include="Compiler\PostCssCommander.cs" />
     <Compile Include="Compiler\ProcessCreator.cs" />
     <Compile Include="Compiler\Result\CompilerResult.cs" />
-    <Compile Include="BeautifierTaggerProvider.cs" />
-    <Compile Include="BeautifierTagger.cs" />
-    <Compile Include="FormatMenuCommand.cs" />
-    <Compile Include="FormatMenuCommandPackage.cs" />
+    <Compile Include="Compiler\ConfigFileManager.cs" />
+    <Compile Include="Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Tagger\BeautifierTaggerProvider.cs" />
+    <Compile Include="Tagger\BeautifierTagger.cs" />
+    <Compile Include="FormatDocumentOnBeforeSave.cs" />
     <Compile Include="Helpers\AsyncHelper.cs" />
-    <Compile Include="Helpers\AsyncLock.cs" />
-    <Compile Include="Helpers\FileHelpers.cs" />
     <Compile Include="Helpers\FileTransientErrorDetectionStrategy.cs" />
     <Compile Include="Helpers\NodePaths.cs" />
-    <Compile Include="Helpers\PolicyFactory.cs" />
-    <Compile Include="Logger.cs" />
+    <Compile Include="Helpers\Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -78,21 +79,19 @@
     <Compile Include="ToolsOptionsPackage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <VSCTCompile Include="FormatMenuCommandPackage.vsct">
-      <ResourceName>Menus.ctmenu</ResourceName>
-    </VSCTCompile>
-    <Content Include="Resources\FormatMenuCommand.png" />
-    <Content Include="Resources\FormatMenuCommandPackage.ico" />
-    <Content Include="Resources\postcss.config.js" />
-    <Content Include="Resources\ToolsOptionsCommand.png" />
-    <Content Include="Resources\ToolsOptionsCommandPackage.ico" />
-    <Content Include="Resources\ToolsOptionsPackage.ico" />
+    <Content Include="Resources\postcss-config-template.js" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Key.snk" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="Resources\postcss-sorting.json" />
+    <None Include="Resources\stylefmt.json" />
+    <None Include="Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
@@ -289,11 +288,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VSPackage.resx">
-      <MergeWithCTO>true</MergeWithCTO>
-      <ManifestResourceName>VSPackage</ManifestResourceName>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -324,7 +321,7 @@
       <Content Include="Resources\nodejs\node.exe">
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
-      <Content Include="Resources\postcss.config.js">
+      <Content Include="Resources\postcss-sorting.json; Resources\stylefmt.json; Resources\postcss-config-template.js;">
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
       <!-- Exclude LESS & SASS because they have too many extra files; use a whitelist instead -->

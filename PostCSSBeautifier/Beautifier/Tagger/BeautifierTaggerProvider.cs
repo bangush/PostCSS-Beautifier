@@ -4,12 +4,13 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using System.ComponentModel.Composition;
 
-namespace PostCSSBeautifier
+namespace PostCSSBeautifier.Tagger
 {
 	[Export(typeof(IViewTaggerProvider))]
-	[ContentType("CSS")]
+	[ContentType("any")]
+	[ContentType("code")]
 	[TagType(typeof(TextMarkerTag))]
-	class BeautifierTaggerProvider : IViewTaggerProvider
+	internal class BeautifierTaggerProvider : IViewTaggerProvider
 	{
 		public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
 		{
