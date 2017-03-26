@@ -1,9 +1,11 @@
-﻿using EnvDTE;
+﻿using DiffPlex;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using PostCSSBeautifier.Compiler;
 using PostCSSBeautifier.Tagger;
 using System;
+using System.Collections.Generic;
 
 namespace PostCSSBeautifier
 {
@@ -35,7 +37,7 @@ namespace PostCSSBeautifier
 			{
 				formatter.Format(doc);
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
 			} // Do not do anything here on purpose.
 		}
@@ -54,16 +56,12 @@ namespace PostCSSBeautifier
 
 		public void Format(Document document)
 		{
-			if (BeautifierTagger.CurrentContentType == null)
-			{
+			if (BeautifierTagger.CurrentContentType == null || !SettingsPage.IsEnabled)
 				return;
-			}
 
 			var typeName = BeautifierTagger.CurrentContentType.TypeName.ToUpper();
 			if (typeName != "CSS" && typeName != "SCSS")
-			{
 				return;
-			}
 
 			var currentDoc = dte.ActiveDocument;
 
@@ -90,12 +88,42 @@ namespace PostCSSBeautifier
 				var result = BeautifierCompiler.ProcessString(docText, BeautifierTagger.CurrentContentType);
 
 				// ReSharper disable once BitwiseOperatorOnEnumWithoutFlags
-				const vsEPReplaceTextOptions flags = vsEPReplaceTextOptions.vsEPReplaceTextTabsSpaces |
-				                                     vsEPReplaceTextOptions.vsEPReplaceTextNormalizeNewlines;
+				const int flags = (int) (vsEPReplaceTextOptions.vsEPReplaceTextTabsSpaces |
+				                         vsEPReplaceTextOptions.vsEPReplaceTextNormalizeNewlines);
 
 				if (result != docText)
 				{
-					startPt.ReplaceText(txtDoc.EndPoint, result, (int) flags);
+					var differ = new Differ();
+					var diffResult = differ.CreateLineDiffs(docText, result, false);
+
+					var beginEditPoint = txtDoc.StartPoint.CreateEditPoint();
+					var endEditPoint = txtDoc.StartPoint.CreateEditPoint();
+					var lineCountChange = 0;
+					foreach (var block in diffResult.DiffBlocks)
+					{
+						var startLine = block.DeleteStartA + lineCountChange + 1;
+						var endLine = block.DeleteStartA + block.DeleteCountA + lineCountChange + 1;
+						lineCountChange += (block.InsertCountB - block.DeleteCountA);
+
+						beginEditPoint.MoveToLineAndOffset(startLine, 1);
+						endEditPoint.MoveToLineAndOffset(endLine, 1);
+
+						//beginEditPoint.ReplaceText(endEditPoint, "", flags);
+
+						var newLines = new List<string>();
+						for (var i = 0; i < block.InsertCountB; i++)
+						{
+							var lineIndex = i + block.InsertStartB;
+							var line = diffResult.PiecesNew[lineIndex];
+							newLines.Add(line);
+						}
+
+						var newText = string.Join("\r\n", newLines) + "\r\n";
+
+						beginEditPoint.ReplaceText(endEditPoint, newText, flags);
+					}
+
+					//startPt.ReplaceText(txtDoc.EndPoint, result, flags);
 
 					textView.SetCaretPos(caretLine, 0);
 					textView.SetScrollPosition(1, firstVisibleUnit);
@@ -104,5 +132,6 @@ namespace PostCSSBeautifier
 
 			currentDoc.Activate();
 		}
+
 	}
 }

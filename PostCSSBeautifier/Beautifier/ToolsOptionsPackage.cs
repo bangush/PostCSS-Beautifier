@@ -14,14 +14,14 @@ namespace PostCSSBeautifier
 {
 	internal static class GuidList
 	{
-		public const string guidMyToolsOptionsPkgString = "01030911-e7a9-43de-bee7-e881eb784ac6";
+		public const string GuidMyToolsOptionsPkgString = "01030911-e7a9-43de-bee7-e881eb784ac6";
 	}
 
 	[PackageRegistration(UseManagedResourcesOnly = true)]
 	[InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
 	[ProvideAutoLoad("{f1536ef8-92ec-443c-9ed7-fdadf150da82}")]
 	[Guid(ToolsOptionsPackage.PackageGuidString)]
-	[ProvideOptionPage(typeof(OptionPageGrid), "PostCSS Beautifier", "Settings", 0, 0, true)]
+	[ProvideOptionPage(typeof(SettingsPage), "PostCSS Beautifier", "Settings", 0, 0, true)]
 	public sealed class ToolsOptionsPackage : Package
 	{
 
@@ -67,8 +67,8 @@ namespace PostCSSBeautifier
 
 	[PackageRegistration(UseManagedResourcesOnly = true)]
 	[InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
-	[Guid(GuidList.guidMyToolsOptionsPkgString)]
-	public class OptionPageGrid : DialogPage
+	[Guid(GuidList.GuidMyToolsOptionsPkgString)]
+	public class SettingsPage : DialogPage
 	{
 		private static readonly Settings Settings = new Settings();
 
@@ -81,6 +81,8 @@ namespace PostCSSBeautifier
 			!string.IsNullOrWhiteSpace(Settings.postcssSortingJsonPath)
 				? Settings.postcssSortingJsonPath
 				: ConfigFileManager.DefaultPostCssSortingPath.ToLower();
+
+		public static bool IsEnabled { get; set; } = Settings.enabled;
 
 		[Category("PostCSS Beautifier")]
 		[DisplayName("StyleFmt JSON Path")]
@@ -98,8 +100,7 @@ namespace PostCSSBeautifier
 
 		[Category("PostCSS Beautifier")]
 		[DisplayName("PostCSS Sorting JSON Path")]
-		[Description(
-			"The location for your postcss-sorting json config file. See https://goo.gl/hl3kQK for formatting tips.")]
+		[Description("The location for your postcss-sorting json config file. See https://goo.gl/hl3kQK for formatting tips.")]
 		public string PostCssSortingJson
 		{
 			get { return PostCssPath; }
@@ -107,6 +108,20 @@ namespace PostCSSBeautifier
 			{
 				PostCssPath = value;
 				Settings.postcssSortingJsonPath = value;
+				Settings.Save();
+			}
+		}
+
+		[Category("PostCSS Beautifier")]
+		[DisplayName("Enabled")]
+		[Description("If false, will not auto-format CSS")]
+		public bool Enabled
+		{
+			get { return IsEnabled; }
+			set
+			{
+				IsEnabled = value;
+				Settings.enabled = value;
 				Settings.Save();
 			}
 		}

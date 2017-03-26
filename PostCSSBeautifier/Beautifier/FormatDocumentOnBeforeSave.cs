@@ -9,15 +9,15 @@ namespace PostCSSBeautifier
 
 	internal class FormatDocumentOnBeforeSave : IVsRunningDocTableEvents3
 	{
-		private readonly DTE _dte;
-		private readonly RunningDocumentTable _runningDocumentTable;
-		private readonly BeautifierFormatService _documentFormatter;
+		private readonly DTE dte;
+		private readonly RunningDocumentTable runningDocumentTable;
+		private readonly BeautifierFormatService documentFormatter;
 
 		public FormatDocumentOnBeforeSave(DTE dte, RunningDocumentTable runningDocumentTable, BeautifierFormatService documentFormatter)
 		{
-			_runningDocumentTable = runningDocumentTable;
-			_documentFormatter = documentFormatter;
-			_dte = dte;
+			this.runningDocumentTable = runningDocumentTable;
+			this.documentFormatter = documentFormatter;
+			this.dte = dte;
 		}
 
 		public int OnBeforeSave(uint docCookie)
@@ -27,17 +27,17 @@ namespace PostCSSBeautifier
 			if (document == null)
 				return VSConstants.S_OK;
 
-			_documentFormatter.FormatDocument(document);
+			documentFormatter.FormatDocument(document);
 
 			return VSConstants.S_OK;
 		}
 
 		private Document FindDocument(uint docCookie)
 		{
-			var documentInfo = _runningDocumentTable.GetDocumentInfo(docCookie);
+			var documentInfo = runningDocumentTable.GetDocumentInfo(docCookie);
 			var documentPath = documentInfo.Moniker;
 
-			return _dte.Documents.Cast<Document>().FirstOrDefault(doc => doc.FullName == documentPath);
+			return dte.Documents.Cast<Document>().FirstOrDefault(doc => doc.FullName == documentPath);
 		}
 
 		public int OnAfterFirstDocumentLock(uint docCookie, uint dwRdtLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)

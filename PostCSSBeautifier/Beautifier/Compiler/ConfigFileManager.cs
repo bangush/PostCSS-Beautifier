@@ -11,14 +11,14 @@ namespace PostCSSBeautifier.Compiler
 		public static string ConfigTemplatePath = Path.Combine(NodePaths.Resources, "postcss-config-template.js");
 
 		public static string PostCssSortingPath = 
-			OptionPageGrid.PostCssPath == DefaultPostCssSortingPath || string.IsNullOrEmpty(OptionPageGrid.PostCssPath)
+			SettingsPage.PostCssPath == DefaultPostCssSortingPath || string.IsNullOrEmpty(SettingsPage.PostCssPath)
 			? DefaultPostCssSortingPath
-			: OptionPageGrid.PostCssPath;
+			: SettingsPage.PostCssPath;
 
 		public static string StyleFmtPath = 
-			OptionPageGrid.StyleFmtPath == DefaultStyleFmtPath || string.IsNullOrEmpty(OptionPageGrid.StyleFmtPath)
+			SettingsPage.StyleFmtPath == DefaultStyleFmtPath || string.IsNullOrEmpty(SettingsPage.StyleFmtPath)
 			? DefaultStyleFmtPath
-			: OptionPageGrid.StyleFmtPath;
+			: SettingsPage.StyleFmtPath;
 
 		public static string ResultantPostCssSortingPath = Path.Combine(NodePaths.Node, "postcss-sorting.json");
 		public static string ResultantStyleFmtPath = Path.Combine(NodePaths.Node, "stylefmt.json");

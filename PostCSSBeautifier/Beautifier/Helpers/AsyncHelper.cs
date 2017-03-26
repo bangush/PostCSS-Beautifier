@@ -6,7 +6,7 @@ namespace PostCSSBeautifier.Helpers
 {
 	internal static class AsyncHelper
 	{
-		private static readonly TaskFactory _myTaskFactory = new
+		private static readonly TaskFactory MyTaskFactory = new
 			TaskFactory(CancellationToken.None,
 				TaskCreationOptions.None,
 				TaskContinuationOptions.None,
@@ -14,7 +14,7 @@ namespace PostCSSBeautifier.Helpers
 
 		public static TResult RunSync<TResult>(Func<Task<TResult>> func)
 		{
-			return AsyncHelper._myTaskFactory
+			return AsyncHelper.MyTaskFactory
 				.StartNew<Task<TResult>>(func)
 				.Unwrap<TResult>()
 				.GetAwaiter()
@@ -23,7 +23,7 @@ namespace PostCSSBeautifier.Helpers
 
 		public static void RunSync(Func<Task> func)
 		{
-			AsyncHelper._myTaskFactory
+			AsyncHelper.MyTaskFactory
 				.StartNew<Task>(func)
 				.Unwrap()
 				.GetAwaiter()
