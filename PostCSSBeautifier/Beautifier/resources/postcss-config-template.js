@@ -1,7 +1,7 @@
 ﻿var scss = require("postcss-scss");
 
 module.exports = {
-	parser: scss,
+	syntax: scss,
 	plugins: [
 		require("stylefmt")($$$STYLEFMT$$$),
 		require('postcss-sorting')($$$POSTCSSSORTING$$$)
